@@ -1,9 +1,19 @@
----
 - name: Update Repository and Full-Upgrade Packages
   apt:
     update_cache: yes
     upgrade: full
 
-- name: Set Server Timezone to {{ timezone }}
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - gnupg
+      - apt-transport-https
+      - python3
+      - python3-pip
+    state: present
+    update_cache: yes
+
+- name: Set Server Timezone to {{ server_timezone }}
   timezone:
-    name: "{{ timezone }}"
+    name: "{{ server_timezone }}"

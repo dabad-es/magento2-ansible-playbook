@@ -1,7 +1,5 @@
----
-- name: Install Magento 2
+- name: Deploy Magento 2
   hosts: magento
-  remote_user: root
   become: yes
 
   roles:
@@ -9,5 +7,10 @@
     - php
     - mariadb
     - composer
+    - opensearch
+    - rabbitmq
+    - redis
+    - pull
     - magento
     - nginx
+    - certbot

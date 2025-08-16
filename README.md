@@ -1,37 +1,63 @@
 # Magento 2 Ansible Playbook
 
-This is an Ansible Playbook for Magento 2. It is used to set up a quick developer environment on a server.
+This is an Ansible Playbook for Magento 2. It is used to launch the following steps:
 
-**This is not recommended for production.**
+1. Install the software requeriments (if they aren't installed yet).
+2. Retrieve Magento project content from a GIT repository.
+3. Deploy Magento project.
 
-It sets up a vanilla Magento 2 installation, and uses Nginx, MariaDB, and PHP.
+More info in [www.dabad.es](https://dabad.es)
 
-This playbook was tested on Ubuntu 18.04 on a Digital Ocean node.
+## Author
 
-## Requirements
+- [David Abad](https://dabad.es)
+- This playbook is forked from [mjah/magento2-ansible-playbook](https://github.com/mjah/magento2-ansible-playbook). Thank you!
 
-* Ubuntu 18.04 or similar environment
-* Minimum 2GB RAM
-* Root user access
-* Magento access keys
 
-## Installation
+## Installation and use
 
-Update the values in:
+1. Install Ansible:
 
-* hosts
-* group_vars/all.yml
+```bash
+sudo apt update
+sudo apt install software-properties-common
+sudo add-apt-repository --yes --update ppa:ansible/ansible
+sudo apt install ansible
+```
 
-Then after editing, run:
+2. Clone this Playbook:
 
-```sh
+```bash
+git clone https://github.com/dabad-es/magento2-ansible-playbook.git ~/ansible
+```
+
+3. Define the remote server host in the `hosts` file: 
+
+```bash
+[magento]
+host01 ansible_host=X.X.X.X ansible_user=XXXX ansible_password=XXXX ansible_become_password=XXXX
+```
+
+4. Define settings in the `group_vars/all.yml`:
+
+
+5. Launch the Playbook: 
+
+```bash
 ansible-playbook -i hosts site.yml
 ```
 
-## To-Do
 
-* [ ] Ability to add custom PHP configuration.
-* [ ] Create a **magento** linux user, instead of using root.
-* [ ] (After magento user created) Set correct group permissions for magento installation.
-* [ ] Set up magento_umask.
-* [ ] Select version of Magento
+## Software requeriments
+
+This Playbook installs the following software requeriments (if they aren't installed on the remote server yet):
+
+- Nginx
+- PHP
+- Composer
+- MariaDB (MySQL)
+- Open Search
+- RabbitMQ
+- Redis
+- Certbot
+

@@ -1,36 +1,49 @@
----
 # Server configuration
-timezone: Europe/London
+server_hostname: midominio.es
+server_dir: /var/www/html/magento
+server_timezone: Europe/Madrid
+server_repository: https://github.com/magento/magento2.git
+server_repository_version: 2.4.8
+server_email: noreply@dabad.es
+server_so: ubuntu
+server_distro: jammy
 
-# Package version
-php_version: 7.2
-mariadb_version: 10.1
-
-# Nginx configuration
-server_hostname: yourdomain.co.uk
-magento_dir: /var/www/html/magento
+# PHP configuration
+php_version: 8.4
+php_composer_version: 2.8.0
 
 # Database configuration
-db_host: localhost
-db_name: magento
-db_user: magento
-db_password: magento
+mariadb_version: 11.4
+mariadb_host: localhost
+mariadb_user: magento
+mariadb_password: magento
+mariadb_name: magento
+
+# Opensearch configuration
+opensearch_host: localhost
+opensearch_port: 9200
+opensearch_version: 2.19.0
+opensearch_password: Magento12345!
+
+# RabbitMQ configuration
+rabbitmq_host: localhost
+rabbitmq_port: 5672
+rabbitmq_user: magento
+rabbitmq_password: magento
+
+# Redis configuration
+redis_host: localhost
+redis_port: 6379
 
 # Magento configuration
 magento_public_key: MAGENTO_PUBLIC_KEY
 magento_private_key: MAGENTO_PRIVATE_KEY
-
-magento_mode: default
-
-base_url: http://yourdomain.co.uk/
-use_rewrites: 1
-
-language: en_GB
-currency: GBP
-
-backend_frontname: admin
-admin_firstname: admin
-admin_lastname: admin
-admin_email: admin@admin.com
-admin_user: admin
-admin_password: admin123
+magento_mode: production
+magento_admin_frontname: admin
+magento_admin_firstname: admin
+magento_admin_lastname: admin
+magento_admin_email: noreply@dabad.es
+magento_admin_user: admin
+magento_admin_password: Admin1234!
+magento_language: es_ES
+magento_currency: EUR

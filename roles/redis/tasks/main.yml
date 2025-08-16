@@ -1,0 +1,37 @@
+- name: Check Redis status
+  ansible.builtin.systemd:
+    name: redis-server
+    state: started
+  register: redis_status
+  ignore_errors: yes
+  changed_when: false
+  no_log: true
+
+- name: Install Redis
+  ansible.builtin.apt:
+    name: redis-server
+    state: present
+  when: (redis_host == "localhost" or redis_host == "127.0.0.1") and redis_status.failed
+
+- name: Setup Redis to listen locally
+  ansible.builtin.lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^bind '
+    line: 'bind 127.0.0.1'
+    backup: yes
+  when: (redis_host == "localhost" or redis_host == "127.0.0.1") and redis_status.failed
+
+- name: Setup Redis memory limit
+  ansible.builtin.lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^#?maxmemory '
+    line: 'maxmemory 0'
+    backup: yes
+  when: (redis_host == "localhost" or redis_host == "127.0.0.1") and redis_status.failed
+
+- name: Init Redis service
+  ansible.builtin.systemd:
+    name: redis-server
+    enabled: yes
+    state: started
+  when: (redis_host == "localhost" or redis_host == "127.0.0.1")

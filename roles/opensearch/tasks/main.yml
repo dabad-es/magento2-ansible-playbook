@@ -1,0 +1,81 @@
+- name: Check OpenSearch status
+  ansible.builtin.stat:
+    path: /usr/share/opensearch/bin/opensearch
+  register: opensearch_check
+  ignore_errors: yes
+  no_log: true
+
+- name: Download OpenSearch GPG key
+  command: wget -O /tmp/opensearch.pgp https://artifacts.opensearch.org/publickeys/opensearch.pgp
+  args:
+    warn: false
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+
+- name: Add OpenSearch GPG
+  apt_key:
+    file: /tmp/opensearch.pgp
+    state: present
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+
+- name: Define OpenSearch repository
+  apt_repository:
+   repo: "deb https://artifacts.opensearch.org/releases/bundle/opensearch/2.x/apt stable main"
+   state: present
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+
+- name: Add a line to /etc/environment (Disable Opensearch demo config)
+  become: yes
+  lineinfile:
+    path: /etc/environment
+    line: 'DISABLE_INSTALL_DEMO_CONFIG=true'
+    state: present
+    create: yes
+    insertafter: EOF
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+
+- name: Add a line to /etc/environment (Set Opensearch password)
+  become: yes
+  lineinfile:
+    path: /etc/environment
+    line: 'OPENSEARCH_INITIAL_ADMIN_PASSWORD={{ opensearch_password }}'
+    state: present
+    create: yes
+    insertafter: EOF
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+
+- name: Install OpenSearch
+  apt:
+   name: opensearch={{opensearch_version}}
+   state: present
+   update_cache: yes
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+  environment:
+    DISABLE_INSTALL_DEMO_CONFIG: "true"
+    OPENSEARCH_INITIAL_ADMIN_PASSWORD: "{{ opensearch_password }}"
+
+- name: Disable Opensearch security plugin
+  become: yes
+  lineinfile:
+    path: /etc/opensearch/opensearch.yml
+    line: 'plugins.security.disabled: true'
+    state: present
+    create: yes
+    insertafter: EOF
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+
+- name: Add Opensearch configuration file
+  template:
+    src: opensearch.yml.j2
+    dest: /etc/opensearch/opensearch.yml
+    owner: root
+    group: root
+    mode: '0644'
+    backup: yes
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1") and not opensearch_check.stat.exists
+
+- name: Init OpenSearch service
+  systemd:
+   name: opensearch
+   enabled: yes
+   state: started
+  when: (opensearch_host == "localhost" or opensearch_host == "127.0.0.1")

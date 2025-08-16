@@ -1,24 +1,35 @@
----
+- name: Check Composer
+  ansible.builtin.command: composer --version --no-interaction
+  register: composer_check
+  ignore_errors: yes
+  no_log: true
+
 - name: Download Composer Installer
-  get_url:
-    url: https://getcomposer.org/installer
-    dest: /tmp/composer-installer
-    mode: 0755
+  command: wget -O /tmp/composer-installer https://getcomposer.org/installer
+  args:
+    warn: false
+  when: composer_check.rc != 0
 
 - name: Install Composer using PHP
   shell: php composer-installer
   args:
     chdir: /tmp/
+  when: composer_check.rc != 0
 
-- name: Move Composer File to /user/local/bin
+- name: Move Composer to /user/local/bin
   shell: mv composer.phar /usr/local/bin/composer
   args:
     chdir: /tmp/
+  when: composer_check.rc != 0
 
-- name: Create Symbolic Link
+- name: Create Composer symlink
   file:
     src: /usr/local/bin/composer
     dest: /usr/bin/composer
     owner: root
     group: root
     state: link
+  when: composer_check.rc != 0
+
+- name: Upgrade Composer version
+  shell: /usr/bin/composer -n self-update {{php_composer_version}}

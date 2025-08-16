@@ -1,0 +1,11 @@
+- name: Set git buffer size
+  ansible.builtin.shell: git config --global http.postBuffer 524288000
+
+- name: Pull from Magento repository
+  ansible.builtin.git:
+    repo: "{{ server_repository }}"
+    dest: "{{ server_dir }}"
+    version: "{{ server_repository_version }}"
+    force: yes
+    update: yes
+    depth: 1

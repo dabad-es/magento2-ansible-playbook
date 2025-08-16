@@ -1,13 +1,37 @@
----
+- name: Check MariaDB status
+  ansible.builtin.command: mariadb --version
+  register: mariadb_check
+  no_log: true
+  ignore_errors: yes
+
+- name: Download MariaDB GPG key
+  command: wget -O /tmp/mariadb_release_signing_key.asc https://mariadb.org/mariadb_release_signing_key.asc
+  args:
+    warn: false
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1") and mariadb_check.rc != 0
+
+- name: Add MariaDB GPG key from file
+  apt_key:
+    file: /tmp/mariadb_release_signing_key.asc
+    state: present
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1") and mariadb_check.rc != 0
+
+- name: Add MariaDB repository
+  apt_repository:
+    repo: "deb [arch=amd64] http://mirror.netcologne.de/mariadb/repo/{{ mariadb_version }}/{{server_so}} {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1") and mariadb_check.rc != 0
+
 - name: Install MariaDB {{ mariadb_version }}
   apt:
     name: [
-      "mariadb-server-{{ mariadb_version }}",
-      "mariadb-client-{{ mariadb_version }}",
-      "python-pip",
-      "python-mysqldb"
+      "mariadb-server",
+      "mariadb-client",
+      "python3-mysqldb"
     ] 
     state: latest
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1") and mariadb_check.rc != 0
 
 - name: Add MariaDB (MySQL) Configuration File
   template:
@@ -19,21 +43,27 @@
     backup: yes
   notify:
   - Restart MariaDB Service
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1") and mariadb_check.rc != 0
 
 - name: Start MariaDB Service
   service:
     name: mariadb
     state: started
     enabled: true
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1")
 
-- name: Set Magento Database User
+- name: Setup Magento database user
   mysql_user:
-    name: "{{ db_user }}"
-    password: "{{ db_password }}"
+    name: "{{ mariadb_user }}"
+    password: "{{ mariadb_password }}"
     priv: "*.*:ALL"
     state: present
+  ignore_errors: yes
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1")
 
-- name: Set Magento Database
+- name: Setup Magento database
   mysql_db:
-    name: "{{ db_name }}"
+    name: "{{ mariadb_name }}"
     state: present
+  ignore_errors: yes
+  when: (mariadb_host == "localhost" or mariadb_host == "127.0.0.1")

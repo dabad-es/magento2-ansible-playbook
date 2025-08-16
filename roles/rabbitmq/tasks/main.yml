@@ -1,0 +1,91 @@
+- name: Check rabbitmq-server status
+  ansible.builtin.systemd:
+    name: rabbitmq-server
+    state: started
+  register: rabbitmq_status
+  ignore_errors: yes
+  changed_when: false
+  no_log: true
+
+- name: Import RabbitMQ public key
+  become: yes
+  ansible.builtin.shell: |
+    curl -1sLf "https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA" \
+    | gpg --dearmor > /usr/share/keyrings/com.rabbitmq.team.gpg
+  args:
+    creates: /usr/share/keyrings/com.rabbitmq.team.gpg
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1") and rabbitmq_status.failed
+
+- name: Import RabbitMQ public key
+  become: yes
+  ansible.builtin.shell: |
+    curl -1sLf "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xf77f1eda57ebb1cc" \
+    | gpg --dearmor > /usr/share/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg
+  args:
+    creates: /usr/share/keyrings/net.launchpad.ppa.rabbitmq.erlang.gpg
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1") and rabbitmq_status.failed
+
+- name: Import RabbitMQ public key
+  become: yes
+  ansible.builtin.shell: |
+    curl -1sLf "https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey" \
+    | gpg --dearmor > /usr/share/keyrings/io.packagecloud.rabbitmq.gpg
+  args:
+    creates: /usr/share/keyrings/io.packagecloud.rabbitmq.gpg
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1") and rabbitmq_status.failed
+
+- name: Install Erlang
+  apt:
+    name: [
+      "erlang-base",
+      "erlang-asn1",
+      "erlang-crypto",
+      "erlang-eldap",
+      "erlang-ftp",
+      "erlang-inets",
+      "erlang-mnesia",
+      "erlang-os-mon",
+      "erlang-parsetools",
+      "erlang-public-key",
+      "erlang-runtime-tools",
+      "erlang-snmp",
+      "erlang-ssl",
+      "erlang-syntax-tools",
+      "erlang-tftp",
+      "erlang-tools",
+      "erlang-xmerl",
+    ]
+    state: present
+    update_cache: yes
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1") and rabbitmq_status.failed
+
+- name: Install RabbitMQ Server
+  apt:
+   name: rabbitmq-server
+   state: present
+   update_cache: yes
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1") and rabbitmq_status.failed
+
+- name: Init the RabbitMQ service
+  systemd:
+   name: rabbitmq-server
+   enabled: yes
+   state: started
+
+- name: Enable RabbitMQ management plugin
+  command: rabbitmq-plugins enable rabbitmq_management
+  args:
+   creates: /etc/rabbitmq/enabled_plugins
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1") and rabbitmq_status.failed
+
+- name: Create RabbitMQ user for Magento
+  command: rabbitmqctl add_user {{rabbitmq_user}} {{rabbitmq_password}}
+  ignore_errors: yes
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1") and rabbitmq_status.failed
+
+- name: Set Magento user permissions
+  command: rabbitmqctl set_permissions -p / {{rabbitmq_user}} ".*" ".*" ".*"
+  ignore_errors: yes
+  when: (rabbitmq_host == "localhost" or rabbitmq_host == "127.0.0.1")

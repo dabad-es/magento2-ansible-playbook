@@ -1,0 +1,17 @@
+- name: Check Certbot status
+  ansible.builtin.command: certbot --version
+  register: certbot_check
+  ignore_errors: yes
+
+- name: Install Certbot
+  ansible.builtin.apt:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+  when: certbot_check.rc != 0
+
+- name: Apply Certbot
+  ansible.builtin.command: >
+    certbot --nginx -d {{ server_hostname }} --non-interactive --agree-tos --email {{ server_email }} --redirect
+  ignore_errors: yes

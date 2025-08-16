@@ -1,8 +1,18 @@
----
+- name: Check Nginx
+  ansible.builtin.command: nginx -v
+  register: nginx_check
+  ignore_errors: yes
+
 - name: Install Nginx
   apt:
     name: nginx
     state: latest
+  when: nginx_check.rc != 0
+
+- name: Check Nginx config file
+  ansible.builtin.stat:
+    path: /etc/nginx/sites-available/magento
+  register: nginx_config_file
 
 - name: Add Nginx Configuration File
   template:
@@ -14,6 +24,7 @@
     backup: yes
   notify:
   - Reload Nginx Configuration
+  when: not nginx_config_file.stat.exists
 
 - name: Create Symbolic Link
   file:
@@ -24,6 +35,7 @@
     state: link
   notify:
   - Reload Nginx Configuration
+  when: not nginx_config_file.stat.exists
 
 - name: Start Nginx Service
   service:
